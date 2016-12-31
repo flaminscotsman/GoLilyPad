@@ -221,10 +221,14 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 			}
 		case connect.REQUEST_GET_PLAYERS:
 			if this.Authorized() {
-				players := this.server.networkCache.Players()
-				if request.(*connect.RequestGetPlayers).List {
+				if request.(*connect.RequestGetPlayers).List && request.(*connect.RequestGetPlayers).IncludeUUIDs {
+					players, uuids := this.server.networkCache.PlayersWithUUIDs()
+					result = connect.NewResultGetPlayersWithUUIDsList(uint16(len(players)), this.server.networkCache.MaxPlayers(), players, uuids)
+				} else if request.(*connect.RequestGetPlayers).List {
+					players := this.server.networkCache.Players()
 					result = connect.NewResultGetPlayersList(uint16(len(players)), this.server.networkCache.MaxPlayers(), players)
 				} else {
+					players := this.server.networkCache.Players()
 					result = connect.NewResultGetPlayers(uint16(len(players)), this.server.networkCache.MaxPlayers())
 				}
 				statusCode = connect.STATUS_SUCCESS

@@ -119,6 +119,18 @@ func (this *NetworkCache) Players() (players []string) {
 	return
 }
 
+func (this *NetworkCache) PlayersWithUUIDs() (players []string, uuids []uuid.UUID) {
+	this.playerToProxyLock.RLock()
+	players = make([]string, 0, len(this.playerToProxy))
+	uuids = make([]uuid.UUID, 0, len(this.playerToProxy))
+	for player, session := range this.playerToProxy {
+		players = append(players, player)
+		uuids = append(uuids, session.proxyPlayers[player])
+	}
+	this.playerToProxyLock.RUnlock()
+	return
+}
+
 func (this *NetworkCache) ProxyByPlayer(player string) (session *Session) {
 	this.playerToProxyLock.RLock()
 	session = this.playerToProxy[player]
