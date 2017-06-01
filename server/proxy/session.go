@@ -18,6 +18,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"net"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -227,6 +228,7 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 			} else {
 				this.serverAddress = this.rawServerAddress[:idx]
 			}
+			this.serverAddress = strings.TrimSuffix(this.serverAddress, ".")
 			supportedVersion := false
 			for _, version := range minecraft.Versions {
 				if version != this.protocolVersion {
@@ -340,6 +342,14 @@ func (this *Session) HandlePacket(packet packet.Packet) (err error) {
 	case STATE_LOGIN:
 		if loginStart, ok := packet.(*minecraft.PacketServerLoginStart); ok {
 			this.name = loginStart.Name
+			if len(this.name) > 16 {
+				err = errors.New("Unexpected name: length is more than 16")
+				return
+			}
+			if ok, _ := regexp.MatchString("^[a-zA-Z0-9_]+$", this.name); !ok {
+				err = errors.New("Unexpected name: pattern mismatch")
+				return
+			}
 			if this.server.Authenticate() {
 				this.serverId, err = GenSalt()
 				if err != nil {
